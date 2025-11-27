@@ -1,18 +1,31 @@
 import React from 'react';
 import Link from 'next/link';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+type ButtonBaseProps = {
     variant?: 'primary' | 'secondary' | 'outline';
-    href?: string;
-}
+    children?: React.ReactNode;
+    className?: string;
+};
+
+type ButtonAsButton = ButtonBaseProps &
+    Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, keyof ButtonBaseProps> & {
+        href?: never;
+    };
+
+type ButtonAsLink = ButtonBaseProps &
+    Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, keyof ButtonBaseProps> & {
+        href: string;
+    };
+
+type ButtonProps = ButtonAsButton | ButtonAsLink;
 
 export const Button: React.FC<ButtonProps> = ({
     children,
     variant = 'primary',
-    href,
     className = '',
     ...props
 }) => {
+    const href = 'href' in props ? props.href : undefined;
     const baseStyles = "inline-flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variants = {
@@ -24,15 +37,16 @@ export const Button: React.FC<ButtonProps> = ({
     const combinedClassName = `${baseStyles} ${variants[variant]} ${className}`;
 
     if (href) {
+        const { href: linkHref, ...anchorProps } = props as ButtonAsLink;
         return (
-            <Link href={href} className={combinedClassName} {...(props as any)}>
+            <Link href={linkHref} className={combinedClassName} {...anchorProps}>
                 {children}
             </Link>
         );
     }
 
     return (
-        <button className={combinedClassName} {...props}>
+        <button className={combinedClassName} {...(props as ButtonAsButton)}>
             {children}
         </button>
     );
